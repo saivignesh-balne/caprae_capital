@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Scraper</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: url('https://t3.ftcdn.net/jpg/03/91/46/10/360_F_391461057_5P0BOWl4lY442Zoo9rzEeJU0S2c1WDZR.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+        .login-section, .scrape-section, .mode-section {
+            transition: all 0.3s ease;
+        }
+        .logged-in .login-section {
+            display: none;
+        }
+        .logged-in .mode-section {
+            display: block;
+        }
+        .scrape-section, .mode-section {
+            display: none;
+        }
+        .bg-success {
+            background-color: #0d6efd !important;
+        }
+        .btn-success {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+        }
+        .btn-success:hover {
+            background-color:rgb(0, 36, 91) !important;
+            border-color:rgb(0, 41, 102) !important;
+        }
+        .btn-primary {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+        }
+        .btn-primary:hover {
+            background-color: rgb(0, 36, 91) !important;
+            border-color: rgb(0, 41, 102) !important;
+        }
+        .scrape-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            z-index: 10000;
+            display: none;
+            max-width: 90%;
+            width: 400px;
+            text-align: center;
+        }
+        .popup-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: none;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+        }
+        .profile-url-input {
+            padding: 12px 15px;
+            font-size: 16px;
+        }
+        .file-input-label {
+            display: block;
+            padding: 40px;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-input-label:hover {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+        .file-input {
+            display: none;
+        }
+    </style>
+</head>
+<div class="popup-overlay" id="popupOverlay"></div>
+<div class="scrape-popup" id="scrapePopup">
+    <button type="button" class="btn-close" onclick="closePopup()"></button>
+    <div class="popup-icon mb-3">
+        <i class="bi" id="popupIcon"></i>
+    </div>
+    <h4 id="popupTitle" class="mb-3"></h4>
+    <p id="popupMessage" class="my-3"></p>
+    <button class="btn" id="popupButton" onclick="closePopup()">OK</button>
+</div>
+<body class="{{ 'logged-in' if logged_in else '' }}">
+    <div class="container py-5" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-lg">
+                    <div class="card-header text-white {{ 'bg-success' if logged_in else 'bg-primary' }}">
+                        <h2 class="text-center mb-0">
+                            <i class="bi bi-linkedin"></i> LinkedIn Profile Scraper
+                        </h2>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <!-- Login Section -->
+                        <!-- Login Section -->
+                        <div class="login-section">
+                            <div class="alert alert-info mb-4">
+                                <h4 class="alert-heading"><i class="bi bi-info-circle"></i> Instructions</h4>
+                                <ol class="mb-0">
+                                    <li>Choose login method below</li>
+                                    <li>Complete login process</li>
+                                    <li>Select scrape mode after login</li>
+                                </ol>
+                            </div>
+                            <form method="POST" class="mb-3">
+                                <button type="submit" name="login_auto" class="btn btn-primary btn-lg w-100 py-3">
+                                    <i class="bi bi-robot"></i> Automatic Login
+                                </button>
+                            </form>
+                            <form method="POST">
+                                <button type="submit" name="login_manual" class="btn btn-outline-primary btn-lg w-100 py-3">
+                                    <i class="bi bi-person"></i> Manual Login
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Mode Selection Section -->
+                        <div class="mode-section">
+                            <ul class="nav nav-pills mb-4 justify-content-center">
+                                <li class="nav-item">
+                                    <a class="nav-link active" data-bs-toggle="pill" href="#manual-tab">Manual Scrape</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="pill" href="#auto-tab">Auto Scrape</a>
+                                </li>
+                            </ul>
+                            
+                            <div class="tab-content">
+                                <!-- Manual Scrape Tab -->
+                                <div class="tab-pane fade show active" id="manual-tab">
+                                    <form method="POST">
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text">
+                                                <i class="bi bi-link-45deg"></i>
+                                            </span>
+                                            <input type="text"
+                                                class="form-control profile-url-input"
+                                                name="profile_url"
+                                                placeholder="Enter profile URL or username"
+                                                required>
+                                        </div>
+                                        <button type="submit" name="scrape_manual" class="btn btn-success w-100 py-3 mb-3">
+                                            <i class="bi bi-download"></i> Scrape This Profile
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <!-- Auto Scrape Tab -->
+                                <div class="tab-pane fade" id="auto-tab">
+                                    <form method="POST" enctype="multipart/form-data">
+                                        <label for="profile_list" class="file-input-label mb-3">
+                                            <i class="bi bi-file-earmark-text display-4 text-muted"></i>
+                                            <h5>Upload Text File</h5>
+                                            <p class="text-muted">One profile URL or username per line</p>
+                                            <small class="text-muted">(TXT or CSV files)</small>
+                                        </label>
+                                        <input type="file" id="profile_list" name="profile_list" class="file-input" accept=".txt,.csv">
+                                        <button type="submit" name="scrape_auto" class="btn btn-primary w-100 py-3">
+                                            <i class="bi bi-collection"></i> Scrape All Profiles
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid mt-3">
+                                <a href="/logout" class="btn btn-outline-danger">
+                                    <i class="bi bi-box-arrow-left"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Handle file input display
+        document.getElementById('profile_list').addEventListener('change', function(e) {
+            const label = document.querySelector('.file-input-label');
+            if (this.files.length > 0) {
+                label.innerHTML = `
+                    <i class="bi bi-file-earmark-check display-4 text-success"></i>
+                    <h5>${this.files[0].name}</h5>
+                    <small class="text-muted">${this.files[0].size > 1024
+                        ? Math.round(this.files[0].size/1024) + ' KB'
+                        : this.files[0].size + ' bytes'}</small>
+                `;
+                label.style.borderColor = '#198754';
+            }
+        });
+        
+        // Focus input when manual tab is shown
+        document.querySelector('a[href="#manual-tab"]').addEventListener('shown.bs.tab', function() {
+            document.querySelector('input[name="profile_url"]').focus();
+        });
+    
+        // Popup functions
+        function showPopup(message, type = 'success') {
+            const popup = document.getElementById('scrapePopup');
+            const overlay = document.getElementById('popupOverlay');
+            const icon = document.getElementById('popupIcon');
+            const title = document.getElementById('popupTitle');
+            const popupMessage = document.getElementById('popupMessage');
+            const button = document.getElementById('popupButton');
+            
+            // Set styles based on type
+            let iconClass, titleText, buttonClass;
+            switch(type) {
+                case 'success':
+                    iconClass = 'bi-check-circle-fill text-success';
+                    titleText = 'Success';
+                    buttonClass = 'btn-success';
+                    break;
+                case 'error':
+                    iconClass = 'bi-exclamation-circle-fill text-danger';
+                    titleText = 'Error';
+                    buttonClass = 'btn-danger';
+                    break;
+                case 'info':
+                    iconClass = 'bi-info-circle-fill text-info';
+                    titleText = 'Info';
+                    buttonClass = 'btn-info';
+                    break;
+                default:
+                    iconClass = 'bi-check-circle-fill text-success';
+                    titleText = 'Success';
+                    buttonClass = 'btn-success';
+            }
+            
+            // Update popup elements
+            icon.className = 'bi ' + iconClass;
+            title.textContent = titleText;
+            popupMessage.textContent = message;
+            button.className = 'btn ' + buttonClass;
+            
+            // Show popup
+            overlay.style.display = 'block';
+            popup.style.display = 'block';
+        }
+    
+        function closePopup() {
+            document.getElementById('popupOverlay').style.display = 'none';
+            document.getElementById('scrapePopup').style.display = 'none';
+        }
+    
+        // Check for popup on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if popup %}
+                showPopup("{{ popup.message }}", "{{ popup.type }}");
+            {% endif %}
+        });
+    </script>
+</body>
+</html>
