@@ -15,7 +15,7 @@ A powerful AI-powered lead generation and analysis tool that helps identify and 
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/caprae-capital.git
+git clone https://github.com/saivignesh-balne/caprae-capital.git
 cd caprae-capital
 ```
 

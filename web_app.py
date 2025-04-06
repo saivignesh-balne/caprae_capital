@@ -68,14 +68,22 @@ def index():
         elif 'login_manual' in request.form:  # Manual login
             try:
                 app.scraper = LinkedInScraper(headless=False)
-                app.scraper.driver.get(config.CONFIG['linkedin']['login_url'])
+                # Set a longer timeout for manual login
+                app.scraper.driver.set_page_load_timeout(120)
+                app.scraper.login(automatic=False)
+                
                 session['show_popup'] = True
-                session['popup_message'] = 'Please complete login in the browser window, then return here'
-                session['popup_type'] = 'info'
+                session['popup_message'] = '✓ Login successful! Select scrape mode'
+                session['popup_type'] = 'success'
+                session['logged_in'] = True  # Explicit session flag
+                
             except Exception as e:
                 session['show_popup'] = True
-                session['popup_message'] = f'Error: {str(e)}'
+                session['popup_message'] = f'Login failed: {str(e)}'
                 session['popup_type'] = 'error'
+                if app.scraper:
+                    app.scraper.close()
+                    app.scraper = None
             return redirect(url_for('index'))
         
         elif 'scrape_manual' in request.form:
